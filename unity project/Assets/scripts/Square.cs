@@ -3,8 +3,9 @@ using System.Collections;
 
 public class Square : MonoBehaviour {
 
-    public ArrayList neighbors;
+    public Vector2[] neighbors = new Vector2[4];
     Grid gridScript;
+    public bool mIsVisited = false;
 
 	// Use this for initialization
 	void Start () {
@@ -18,6 +19,6 @@ public class Square : MonoBehaviour {
 
     void OnMouseDown()
     {
-        gridScript.Foo(this);
+        gridScript.HandleSquareClick(this);
     }
 }

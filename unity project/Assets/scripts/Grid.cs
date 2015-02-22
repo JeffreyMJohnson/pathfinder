@@ -11,11 +11,15 @@ public class Grid : MonoBehaviour
     public Button mDFSearchButton;
     public Button mBFSearchButton;
     public Button mDijkstraPathButton;
+    public Button mAStarPathButton;
     public Button mResetButton;
+
+    const int GRID_ROWS = 10;
+    const int GRID_COLS = 10;
 
     Color WHITE = new Color(1, 1, 1, 1);
 
-    Transform[,] mSquareList = new Transform[10, 10];
+    Transform[,] mSquareList = new Transform[GRID_ROWS, GRID_COLS];
 
     Square mStartTile = null;
     Square mGoalTile = null;
@@ -30,14 +34,15 @@ public class Grid : MonoBehaviour
         mGoalPositionLabel.gameObject.SetActive(false);
 
         CreateGrid();
+        ResetButtonHandler();
 
     }
 
     void CreateGrid()
     {
-        for (int row = 0; row < 10; row++)
+        for (int row = 0; row < GRID_ROWS; row++)
         {
-            for (int col = 0; col < 10; col++)
+            for (int col = 0; col < GRID_COLS; col++)
             {
                 Transform squareInstance = Instantiate(mSquarePrefab, new Vector3(row, col, 0), Quaternion.identity) as Transform;
                 mSquareList[row, col] = squareInstance;
@@ -81,61 +86,95 @@ public class Grid : MonoBehaviour
             }
         }
 
+    }
 
+    public void AStarButtonWrapper()
+    {
+        DeactivateButtons();
+        StartCoroutine(AStarPathButtonHandler());
+    }
+
+    IEnumerator AStarPathButtonHandler()
+    {
+        List<Square> priorityQ = new List<Square>();
+        priorityQ.Add(mStartTile);
+        mStartTile.mGScore = 0;
+        mStartTile.mPathParentNode = mStartTile;
+
+        while(priorityQ.Count != 0)
+        {
+            priorityQ.Sort(delegate(Square x, Square y)
+            {
+                if (x == null && y == null) return 0;
+                else if (x == null) return -1;
+                else if (y == null) return 1;
+                else return x.mFScore.CompareTo(y.mFScore);
+            });
+
+            Square current = priorityQ[0];
+            priorityQ.RemoveAt(0);
+
+            current.mIsVisited = true;
+            if (current != mStartTile && current != mGoalTile)
+            {
+                current.GetComponent<SpriteRenderer>().color = new Color(1, 1, 0, 1);
+            }
+
+            if (current == mGoalTile)
+                break;
+
+            foreach (Vector2 neighborPos in current.neighbors)
+            {
+                if (neighborPos.x >= 0 && neighborPos.y >= 0)
+                {
+                    Square neighbor = mSquareList[(int)neighborPos.x, (int)neighborPos.y].GetComponent<Square>();
+                    if (!neighbor.mIsVisited)
+                    {
+                        int fScore = (int)(current.mGScore + neighbor.mWeight + GetHeuristic(neighbor, mGoalTile));
+                        
+                        if (fScore < neighbor.mGScore)
+                        {
+                            neighbor.mPathParentNode = current;
+                            neighbor.mGScore = current.mGScore + neighbor.mWeight;
+                            neighbor.mFScore = fScore;
+                            if (!priorityQ.Contains(neighbor))
+                            {
+                                priorityQ.Add(neighbor);
+                            }
+                        }
+                    }
+                }
+
+            }
+            yield return new WaitForSeconds(2 * Time.deltaTime);
+        }
+        //mark the path
+        Square parent = mGoalTile.mPathParentNode;
+        while (parent != mStartTile)
+        {
+            parent.GetComponent<SpriteRenderer>().color = new Color(0, 0, 1, 1);//blue
+            parent = parent.mPathParentNode;
+            yield return new WaitForSeconds(2 * Time.deltaTime);
+        }
+        mResetButton.interactable = true;
+        yield break;
+
+    }
+
+    float GetHeuristic(Square node, Square targetNode)
+    {
+        return Vector2.Distance(node.transform.localPosition, targetNode.transform.localPosition);
     }
 
     public void DijkstraButtonWrapper()
     {
+        DeactivateButtons();
         StartCoroutine(DijkstraPathButtonHandler());
+        
     }
 
     IEnumerator DijkstraPathButtonHandler()
     {
-        /*
-         std::list<GraphNode*> priorityQ;
-		ResetNodelist();
-		priorityQ.push_front(start);
-		start->mGScore = 0;
-		start->mParent = start;
-
-		while (!priorityQ.empty())
-		{
-			//sort so first node always lowest g score
-			priorityQ.sort(&Graph::NodeCompare);
-			GraphNode* current = priorityQ.front();
-			priorityQ.pop_front();
-
-			current->mIsVisited = true;
-
-			for (auto edge : current->mEdges)
-			{
-				if (!edge.mEnd->mIsVisited)
-				{
-					int cost = current->mGScore + edge.mCost;
-					if (cost < edge.mEnd->mGScore)
-					{
-						edge.mEnd->mParent = current;
-						edge.mEnd->mGScore = cost;
-						std::find(priorityQ.begin(), priorityQ.end(), edge.mEnd);
-						if ((std::find(priorityQ.begin(), priorityQ.end(), edge.mEnd)) == priorityQ.end())
-						{
-							priorityQ.push_back(edge.mEnd);
-						}
-					}
-				}
-			}
-		}
-		std::list<GraphNode*> result;
-		result.push_front(end);
-		GraphNode* parent = end->mParent;
-		while (parent != start)
-		{
-			result.push_front(parent);
-			parent = parent->mParent;
-		}
-		result.push_front(parent);
-		return result;
-         */
 
         List<Square> priorityQ = new List<Square>();
         priorityQ.Add(mStartTile);
@@ -197,7 +236,7 @@ public class Grid : MonoBehaviour
 
     public void DFSButtonWrapper()
     {
-        mResetButton.interactable = false;
+        DeactivateButtons();
         StartCoroutine(DFSearchButtongHandle());
     }
 
@@ -254,15 +293,32 @@ public class Grid : MonoBehaviour
 
         mStartPositionLabel.gameObject.SetActive(false);
         mGoalPositionLabel.gameObject.SetActive(false);
+
+        DeactivateButtons();
+
+    }
+
+    void DeactivateButtons()
+    {
         mDFSearchButton.interactable = false;
         mBFSearchButton.interactable = false;
+        mDijkstraPathButton.interactable = false;
+        mAStarPathButton.interactable = false;
         mResetButton.interactable = false;
+    }
 
+    void ActivateButtons()
+    {
+        mDFSearchButton.interactable = true;
+        mBFSearchButton.interactable = true;
+        mDijkstraPathButton.interactable = true;
+        mAStarPathButton.interactable = true;
+        mResetButton.interactable = true;
     }
 
     public void BFSButtonWrapper()
     {
-        mResetButton.interactable = false;
+        DeactivateButtons();
         StartCoroutine(BFSearchButtonHandle());
     }
 
@@ -330,8 +386,7 @@ public class Grid : MonoBehaviour
         {
             mGoalTile = clicked;
             mGoalTile.GetComponent<SpriteRenderer>().color = new Color(1, 0, 0, 1);
-            mDFSearchButton.interactable = true;
-            mBFSearchButton.interactable = true;
+            ActivateButtons();
         }
     }
 }

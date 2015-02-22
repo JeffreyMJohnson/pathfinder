@@ -9,6 +9,7 @@ public class Square : MonoBehaviour, IComparable<Square> {
     public bool mIsVisited = false;
     public int mWeight = 1;
     public int mGScore = int.MaxValue;
+    public int mFScore = 0;
     public Square mPathParentNode;
 
 

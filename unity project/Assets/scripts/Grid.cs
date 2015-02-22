@@ -9,6 +9,7 @@ public class Grid : MonoBehaviour
     public Text mStartPositionLabel;
     public Text mGoalPositionLabel;
     public Button mDFSearchButton;
+    public Button mBFSearchButton;
     public Button mResetButton;
 
     Color WHITE = new Color(1, 1, 1, 1);
@@ -139,8 +140,77 @@ public class Grid : MonoBehaviour
         mStartPositionLabel.gameObject.SetActive(false);
         mGoalPositionLabel.gameObject.SetActive(false);
         mDFSearchButton.interactable = false;
+        mBFSearchButton.interactable = false;
         mResetButton.interactable = false;
 
+    }
+
+    public void BFSButtonWrapper()
+    {
+        mResetButton.interactable = false;
+        StartCoroutine(BFSearchButtonHandle());
+    }
+
+    IEnumerator BFSearchButtonHandle()
+    {
+        /*
+         std::queue<GraphNode*> nodeQueue;
+		nodeQueue.push(a_start);
+
+		while (!nodeQueue.empty())
+		{
+			GraphNode* current = nodeQueue.front();
+			nodeQueue.pop();
+			if (current->mIsVisited)
+				continue;
+			if (current == a_end)
+			{
+				return true;
+			}
+			current->mIsVisited = true;
+
+			for (auto edge : current->mEdges)
+			{
+				if (!edge.mEnd->mIsVisited)
+				{
+					nodeQueue.push(edge.mEnd);
+				}
+			}
+		}
+		return false;
+         */
+
+        Queue<Square> nodeQ = new Queue<Square>();
+        nodeQ.Enqueue(mStartTile);
+
+        while(nodeQ.Count != 0)
+        {
+            Square current = nodeQ.Dequeue();
+            if (current.mIsVisited)
+            {
+                continue;
+            }
+            if (current == mGoalTile)
+            {
+                mResetButton.interactable = true;
+                yield break;
+            }
+            current.mIsVisited = true;
+            if (current != mStartTile && current != mGoalTile)
+            {
+                current.GetComponent<SpriteRenderer>().color = new Color(1, 1, 0, 1);
+            }
+
+            foreach (Vector2 neighborPos in current.neighbors)
+            {
+                if (neighborPos.x >= 0 && neighborPos.y >= 0)
+                {
+                    nodeQ.Enqueue(mSquareList[(int)neighborPos.x, (int)neighborPos.y].GetComponent<Square>());
+                }
+            }
+            yield return new WaitForSeconds(2 * Time.deltaTime);
+
+        }
     }
 
     // Update is called once per frame
@@ -173,6 +243,7 @@ public class Grid : MonoBehaviour
             mGoalTile = clicked;
             mGoalTile.GetComponent<SpriteRenderer>().color = new Color(1, 0, 0, 1);
             mDFSearchButton.interactable = true;
+            mBFSearchButton.interactable = true;
         }
     }
 }

@@ -10,6 +10,7 @@ public class Grid : MonoBehaviour
     public Text mGoalPositionLabel;
     public Button mDFSearchButton;
     public Button mBFSearchButton;
+    public Button mDijkstraPathButton;
     public Button mResetButton;
 
     Color WHITE = new Color(1, 1, 1, 1);
@@ -83,6 +84,117 @@ public class Grid : MonoBehaviour
 
     }
 
+    public void DijkstraButtonWrapper()
+    {
+        StartCoroutine(DijkstraPathButtonHandler());
+    }
+
+    IEnumerator DijkstraPathButtonHandler()
+    {
+        /*
+         std::list<GraphNode*> priorityQ;
+		ResetNodelist();
+		priorityQ.push_front(start);
+		start->mGScore = 0;
+		start->mParent = start;
+
+		while (!priorityQ.empty())
+		{
+			//sort so first node always lowest g score
+			priorityQ.sort(&Graph::NodeCompare);
+			GraphNode* current = priorityQ.front();
+			priorityQ.pop_front();
+
+			current->mIsVisited = true;
+
+			for (auto edge : current->mEdges)
+			{
+				if (!edge.mEnd->mIsVisited)
+				{
+					int cost = current->mGScore + edge.mCost;
+					if (cost < edge.mEnd->mGScore)
+					{
+						edge.mEnd->mParent = current;
+						edge.mEnd->mGScore = cost;
+						std::find(priorityQ.begin(), priorityQ.end(), edge.mEnd);
+						if ((std::find(priorityQ.begin(), priorityQ.end(), edge.mEnd)) == priorityQ.end())
+						{
+							priorityQ.push_back(edge.mEnd);
+						}
+					}
+				}
+			}
+		}
+		std::list<GraphNode*> result;
+		result.push_front(end);
+		GraphNode* parent = end->mParent;
+		while (parent != start)
+		{
+			result.push_front(parent);
+			parent = parent->mParent;
+		}
+		result.push_front(parent);
+		return result;
+         */
+
+        List<Square> priorityQ = new List<Square>();
+        priorityQ.Add(mStartTile);
+        mStartTile.mGScore = 0;
+        mStartTile.mPathParentNode = mStartTile;
+
+        while(priorityQ.Count != 0)
+        {
+            priorityQ.Sort();
+            Square current = priorityQ[0];
+            priorityQ.RemoveAt(0);
+
+            current.mIsVisited = true;
+            if (current != mStartTile && current != mGoalTile)
+            {
+                current.GetComponent<SpriteRenderer>().color = new Color(1, 1, 0, 1);
+            }
+
+            if (current == mGoalTile)
+                break;
+
+            foreach(Vector2 neighborPos in current.neighbors)
+            {
+                 if (neighborPos.x >= 0 && neighborPos.y >= 0)
+                 {
+                     Square neighbor = mSquareList[(int)neighborPos.x, (int)neighborPos.y].GetComponent<Square>();
+                     if (!neighbor.mIsVisited)
+                     {
+                         int cost = current.mGScore + neighbor.mWeight;
+                         if (cost < neighbor.mGScore)
+                         {
+                             neighbor.mPathParentNode = current;
+                             neighbor.mGScore = cost;
+                             if (!priorityQ.Contains(neighbor))
+                             {
+                                 priorityQ.Add(neighbor);
+                             }
+                         }
+                     }
+                 }
+
+            }
+
+            yield return new WaitForSeconds(2 * Time.deltaTime);
+        }
+
+        //mark the path
+        Square parent = mGoalTile.mPathParentNode;
+        while (parent != mStartTile)
+        {
+            parent.GetComponent<SpriteRenderer>().color = new Color(0, 0, 1, 1);//blue
+            parent = parent.mPathParentNode;
+            yield return new WaitForSeconds(2 * Time.deltaTime);
+        }
+        mResetButton.interactable = true;
+        yield break;
+
+    }
+
     public void DFSButtonWrapper()
     {
         mResetButton.interactable = false;
@@ -131,7 +243,10 @@ public class Grid : MonoBehaviour
         foreach (Transform tile in mSquareList)
         {
             tile.GetComponent<SpriteRenderer>().color = WHITE;
-            tile.GetComponent<Square>().mIsVisited = false;
+            Square s = tile.GetComponent<Square>();
+            s.mIsVisited = false;
+            s.mGScore = int.MaxValue;
+            s.mPathParentNode = null;
         }
 
         mStartTile = null;
@@ -153,33 +268,6 @@ public class Grid : MonoBehaviour
 
     IEnumerator BFSearchButtonHandle()
     {
-        /*
-         std::queue<GraphNode*> nodeQueue;
-		nodeQueue.push(a_start);
-
-		while (!nodeQueue.empty())
-		{
-			GraphNode* current = nodeQueue.front();
-			nodeQueue.pop();
-			if (current->mIsVisited)
-				continue;
-			if (current == a_end)
-			{
-				return true;
-			}
-			current->mIsVisited = true;
-
-			for (auto edge : current->mEdges)
-			{
-				if (!edge.mEnd->mIsVisited)
-				{
-					nodeQueue.push(edge.mEnd);
-				}
-			}
-		}
-		return false;
-         */
-
         Queue<Square> nodeQ = new Queue<Square>();
         nodeQ.Enqueue(mStartTile);
 

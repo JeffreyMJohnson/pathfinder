@@ -14,8 +14,8 @@ public class Grid : MonoBehaviour
     public Button mAStarPathButton;
     public Button mResetButton;
 
-    const int GRID_ROWS = 10;
-    const int GRID_COLS = 10;
+    const int GRID_ROWS = 25;
+    const int GRID_COLS = 25;
 
     Color WHITE = new Color(1, 1, 1, 1);
 
@@ -28,7 +28,8 @@ public class Grid : MonoBehaviour
     void Start()
     {
         //move camera
-        Camera.main.transform.Translate(new Vector3(5, 4.5f, 0));
+        Camera.main.transform.Translate(new Vector3(12.5f, 12, -10));
+        Camera.main.orthographicSize = 13;
 
         mStartPositionLabel.gameObject.SetActive(false);
         mGoalPositionLabel.gameObject.SetActive(false);
@@ -48,7 +49,7 @@ public class Grid : MonoBehaviour
                 mSquareList[row, col] = squareInstance;
                 Square script = squareInstance.GetComponent<Square>();
                 //north neighbor
-                if (row + 1 < 10)
+                if (row + 1 < GRID_ROWS)
                 {
                     script.neighbors[0] = new Vector2(row + 1, col);
                 }
@@ -66,7 +67,7 @@ public class Grid : MonoBehaviour
                     script.neighbors[1] = new Vector2(-1, -1);
                 }
                 //east neighbor
-                if (col + 1 < 10)
+                if (col + 1 < GRID_COLS)
                 {
                     script.neighbors[2] = new Vector2(row, col + 1);
                 }
